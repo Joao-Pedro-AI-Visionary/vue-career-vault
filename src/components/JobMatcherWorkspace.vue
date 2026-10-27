@@ -22,17 +22,19 @@ const statusLabels: Record<ApplicationStatus, string> = {
   offer: 'Proposta Recebida'
 }
 
+function parseFlexibleSkillList(raw: string): string[] {
+  // Lei de Postel (16) & Lei de Tesler (15): Aceita vírgula, ponto-e-vírgula, pipe ou quebra de linha
+  return raw
+    .split(/[,;|\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
 function handleCreateJob() {
   if (!title.value.trim() || !company.value.trim()) return
 
-  const requiredSkills = requiredInput.value
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-  const bonusSkills = bonusInput.value
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
+  const requiredSkills = parseFlexibleSkillList(requiredInput.value)
+  const bonusSkills = parseFlexibleSkillList(bonusInput.value)
 
   store.addJob({
     title: title.value.trim(),
@@ -313,17 +315,19 @@ function handleCreateJob() {
         </div>
       </div>
 
-      <!-- Prioritized Study Plan -->
+      <!-- Prioritized Study Plan (Efeito Zeigarnik 10 + Gradiente de Meta 11 + Regra do Pico-Fim 09) -->
       <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-        <h3 class="font-mono-tech text-xs font-semibold tracking-wider text-slate-300 uppercase">
-          Plano de Estudo Priorizado para Esta Vaga
-        </h3>
-        <p
+        <div class="flex items-center justify-between">
+          <h3 class="font-mono-tech text-xs font-semibold tracking-wider text-slate-300 uppercase">
+            Plano de Estudo Priorizado (Progresso: {{ store.selectedJobAnalysis.matchedRequired.length }} de {{ store.selectedJob.requiredSkills.length }} obrigatórias)
+          </h3>
+        </div>
+        <div
           v-if="store.selectedJobAnalysis.studyPlan.length === 0"
-          class="mt-2 text-sm text-emerald-300"
+          class="mt-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-300"
         >
-          100% dos requisitos cobertos! Você está pronto para submeter o currículo e o teste técnico.
-        </p>
+          ✓ 100% dos requisitos técnicos validados! Seu perfil está pronto para submissão imediata nesta vaga.
+        </div>
         <ul v-else class="mt-3 space-y-2">
           <li
             v-for="item in store.selectedJobAnalysis.studyPlan"
