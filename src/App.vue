@@ -7,12 +7,36 @@ import SnippetVaultWorkspace from '@/components/SnippetVaultWorkspace.vue'
 
 const store = useCareerVaultStore()
 const activeTab = ref<'jobs' | 'snippets'>('jobs')
+const showBackupDrawer = ref(false)
+const backupJsonText = ref('')
+const backupError = ref('')
+const backupSuccess = ref('')
 
 onMounted(() => {
   if (store.jobs.length === 0) {
     store.initialize()
   }
 })
+
+function openBackupPanel() {
+  showBackupDrawer.value = !showBackupDrawer.value
+  backupError.value = ''
+  backupSuccess.value = ''
+  if (showBackupDrawer.value) {
+    backupJsonText.value = store.exportBackupJson()
+  }
+}
+
+function handleImportBackup() {
+  backupError.value = ''
+  backupSuccess.value = ''
+  try {
+    store.importBackupJson(backupJsonText.value)
+    backupSuccess.value = 'Backup JSON validado e importado com sucesso!'
+  } catch (err) {
+    backupError.value = err instanceof Error ? err.message : 'Falha ao validar backup JSON.'
+  }
+}
 </script>
 
 <template>
@@ -21,7 +45,7 @@ onMounted(() => {
     <header class="border-b border-slate-800/80 bg-[#111827]/95 backdrop-blur">
       <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/40 bg-amber-500/10 font-mono-tech text-sm font-bold text-amber-400">
+          <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-amber-500/40 bg-amber-500/10 font-mono-tech text-sm font-bold text-amber-400">
             CV
           </div>
           <div>
@@ -41,7 +65,7 @@ onMounted(() => {
 
         <!-- Navigation & Global Telemetry -->
         <div class="flex flex-wrap items-center gap-3">
-          <div class="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs">
+          <div class="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs">
             <span class="text-slate-400">Média de Match: </span>
             <span class="font-mono-tech font-bold text-emerald-400">{{ store.averageMatchScore }}%</span>
           </div>
@@ -50,7 +74,7 @@ onMounted(() => {
             <button
               type="button"
               data-testid="nav-tab-jobs"
-              class="min-h-[44px] rounded-md px-4 py-1.5 text-xs font-semibold transition"
+              class="min-h-[48px] rounded-md px-4 py-1.5 text-xs font-semibold transition"
               :class="
                 activeTab === 'jobs'
                   ? 'bg-amber-500 text-slate-950'
@@ -63,7 +87,7 @@ onMounted(() => {
             <button
               type="button"
               data-testid="nav-tab-snippets"
-              class="min-h-[44px] rounded-md px-4 py-1.5 text-xs font-semibold transition"
+              class="min-h-[48px] rounded-md px-4 py-1.5 text-xs font-semibold transition"
               :class="
                 activeTab === 'snippets'
                   ? 'bg-amber-500 text-slate-950'
@@ -77,7 +101,17 @@ onMounted(() => {
 
           <button
             type="button"
-            class="min-h-[44px] rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-600"
+            data-testid="open-backup-btn"
+            class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-200 hover:border-amber-400"
+            @click="openBackupPanel"
+          >
+            Backup JSON
+          </button>
+
+          <button
+            type="button"
+            data-testid="reset-demo-btn"
+            class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs text-slate-300 hover:border-slate-600"
             @click="store.resetToDefaultSeed()"
           >
             Restaurar Demo
@@ -88,6 +122,57 @@ onMounted(() => {
 
     <!-- Main Content -->
     <main class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+      <!-- Backup Export/Import Drawer -->
+      <section
+        v-if="showBackupDrawer"
+        data-testid="backup-drawer"
+        class="space-y-3 rounded-xl border border-amber-500/40 bg-[#111827] p-5"
+      >
+        <div class="flex items-center justify-between">
+          <h2 class="font-display text-base font-semibold text-amber-300">
+            Exportar / Importar Snapshot JSON (Validação de Schema v1)
+          </h2>
+          <button
+            type="button"
+            class="text-xs text-slate-400 hover:text-slate-200"
+            @click="showBackupDrawer = false"
+          >
+            Fechar
+          </button>
+        </div>
+        <p
+          v-if="backupError"
+          data-testid="backup-error-alert"
+          role="alert"
+          class="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-xs font-medium text-rose-200"
+        >
+          {{ backupError }}
+        </p>
+        <p
+          v-if="backupSuccess"
+          data-testid="backup-success-alert"
+          class="rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-200"
+        >
+          {{ backupSuccess }}
+        </p>
+        <textarea
+          v-model="backupJsonText"
+          data-testid="backup-json-textarea"
+          rows="5"
+          class="font-mono-tech w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-xs text-slate-200"
+        ></textarea>
+        <div class="flex gap-3">
+          <button
+            type="button"
+            data-testid="import-backup-submit"
+            class="min-h-[48px] rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-400"
+            @click="handleImportBackup"
+          >
+            Validar e Importar JSON
+          </button>
+        </div>
+      </section>
+
       <SkillMatrixBar />
       <JobMatcherWorkspace v-if="activeTab === 'jobs'" />
       <SnippetVaultWorkspace v-else />

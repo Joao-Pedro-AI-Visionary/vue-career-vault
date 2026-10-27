@@ -10,3 +10,5 @@ coverage/
 .harness/
 .bsd/
 .worktrees/
+test-results/
+playwright-report/

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useCareerVaultStore } from '@/stores/useCareerVaultStore'
-import type { ApplicationStatus, JobRoleLevel, WorkMode } from '@/domain/contracts'
+import type { ApplicationStatus, JobOpportunity, JobRoleLevel, WorkMode } from '@/domain/contracts'
 
 const store = useCareerVaultStore()
 
-const showNewJobForm = ref(false)
+const showJobForm = ref(false)
+const editingJobId = ref<string | null>(null)
 const title = ref('')
 const company = ref('')
 const level = ref<JobRoleLevel>('Pleno')
@@ -13,6 +14,7 @@ const workMode = ref<WorkMode>('remote')
 const requiredInput = ref('')
 const bonusInput = ref('')
 const notes = ref('')
+const jobError = ref('')
 
 const statusLabels: Record<ApplicationStatus, string> = {
   saved: 'Mapeada',
@@ -30,29 +32,71 @@ function parseFlexibleSkillList(raw: string): string[] {
     .filter(Boolean)
 }
 
-function handleCreateJob() {
-  if (!title.value.trim() || !company.value.trim()) return
-
-  const requiredSkills = parseFlexibleSkillList(requiredInput.value)
-  const bonusSkills = parseFlexibleSkillList(bonusInput.value)
-
-  store.addJob({
-    title: title.value.trim(),
-    company: company.value.trim(),
-    level: level.value,
-    workMode: workMode.value,
-    status: 'saved',
-    requiredSkills: requiredSkills.length > 0 ? requiredSkills : ['Vue 3'],
-    bonusSkills,
-    notes: notes.value.trim()
-  })
-
+function openCreateForm() {
+  editingJobId.value = null
   title.value = ''
   company.value = ''
+  level.value = 'Pleno'
+  workMode.value = 'remote'
   requiredInput.value = ''
   bonusInput.value = ''
   notes.value = ''
-  showNewJobForm.value = false
+  jobError.value = ''
+  showJobForm.value = !showJobForm.value
+}
+
+function openEditForm(job: JobOpportunity) {
+  editingJobId.value = job.id
+  title.value = job.title
+  company.value = job.company
+  level.value = job.level
+  workMode.value = job.workMode
+  requiredInput.value = job.requiredSkills.join(', ')
+  bonusInput.value = job.bonusSkills.join(', ')
+  notes.value = job.notes
+  jobError.value = ''
+  showJobForm.value = true
+}
+
+function handleSaveJob() {
+  jobError.value = ''
+  const requiredSkills = parseFlexibleSkillList(requiredInput.value)
+  const bonusSkills = parseFlexibleSkillList(bonusInput.value)
+
+  try {
+    if (editingJobId.value) {
+      store.updateJob(editingJobId.value, {
+        title: title.value,
+        company: company.value,
+        level: level.value,
+        workMode: workMode.value,
+        requiredSkills,
+        bonusSkills,
+        notes: notes.value.trim()
+      })
+    } else {
+      store.addJob({
+        title: title.value,
+        company: company.value,
+        level: level.value,
+        workMode: workMode.value,
+        status: 'saved',
+        requiredSkills,
+        bonusSkills,
+        notes: notes.value.trim()
+      })
+    }
+
+    title.value = ''
+    company.value = ''
+    requiredInput.value = ''
+    bonusInput.value = ''
+    notes.value = ''
+    editingJobId.value = null
+    showJobForm.value = false
+  } catch (err) {
+    jobError.value = err instanceof Error ? err.message : 'Erro ao salvar vaga.'
+  }
 }
 </script>
 
@@ -70,32 +114,42 @@ function handleCreateJob() {
         <button
           type="button"
           data-testid="open-new-job-form"
-          class="min-h-[44px] rounded-lg border border-amber-500/40 bg-amber-500/15 px-3.5 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/25 focus:outline-none focus:ring-2 focus:ring-amber-400"
-          @click="showNewJobForm = !showNewJobForm"
+          class="min-h-[48px] rounded-lg border border-amber-500/40 bg-amber-500/15 px-3.5 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/25 focus:outline-none focus:ring-2 focus:ring-amber-400"
+          @click="openCreateForm"
         >
-          {{ showNewJobForm ? 'Fechar Formulário' : '+ Nova Vaga' }}
+          {{ showJobForm && !editingJobId ? 'Fechar Formulário' : '+ Nova Vaga' }}
         </button>
       </div>
 
-      <!-- New Job Form -->
+      <!-- Create / Update Job Form -->
       <form
-        v-if="showNewJobForm"
+        v-if="showJobForm"
         data-testid="submit-new-job"
         class="space-y-3 rounded-xl border border-amber-500/40 bg-slate-900/95 p-4 shadow-xl"
-        @submit.prevent="handleCreateJob"
+        novalidate
+        @submit.prevent="handleSaveJob"
       >
         <p class="font-mono-tech text-xs font-semibold text-amber-400 uppercase">
-          Cadastrar Vaga para Análise de Match
+          {{ editingJobId ? 'Editar Vaga Selecionada' : 'Cadastrar Vaga para Análise de Match' }}
         </p>
+
+        <p
+          v-if="jobError"
+          data-testid="job-error-alert"
+          role="alert"
+          class="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-xs font-medium text-rose-200"
+        >
+          {{ jobError }}
+        </p>
+
         <div>
           <label class="block text-xs text-slate-300">Título da Vaga</label>
           <input
             v-model="title"
             data-testid="input-job-title"
             type="text"
-            required
             placeholder="Ex: Desenvolvedor Fullstack Pleno PHP/Vue"
-            class="mt-1 min-h-[44px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            class="mt-1 min-h-[48px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
           />
         </div>
         <div class="grid grid-cols-2 gap-2">
@@ -105,16 +159,16 @@ function handleCreateJob() {
               v-model="company"
               data-testid="input-job-company"
               type="text"
-              required
               placeholder="Nome da empresa"
-              class="mt-1 min-h-[44px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              class="mt-1 min-h-[48px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
             />
           </div>
           <div>
             <label class="block text-xs text-slate-300">Senioridade</label>
             <select
               v-model="level"
-              class="mt-1 min-h-[44px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              data-testid="select-job-level"
+              class="mt-1 min-h-[48px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
             >
               <option value="Jr">Júnior</option>
               <option value="Pleno">Pleno</option>
@@ -123,29 +177,30 @@ function handleCreateJob() {
           </div>
         </div>
         <div>
-          <label class="block text-xs text-slate-300">Skills Obrigatórias (separadas por vírgula)</label>
+          <label class="block text-xs text-slate-300">Skills Obrigatórias (vírgula ou ponto-e-vírgula)</label>
           <input
             v-model="requiredInput"
             data-testid="input-job-required"
             type="text"
             placeholder="PHP 8.3, Laravel 12, Vue 3, MySQL"
-            class="mt-1 min-h-[44px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            class="mt-1 min-h-[48px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
           />
         </div>
         <div>
-          <label class="block text-xs text-slate-300">Skills Diferenciais / Bônus (separadas por vírgula)</label>
+          <label class="block text-xs text-slate-300">Skills Diferenciais / Bônus</label>
           <input
             v-model="bonusInput"
             data-testid="input-job-bonus"
             type="text"
             placeholder="Docker, TypeScript, Pest"
-            class="mt-1 min-h-[44px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            class="mt-1 min-h-[48px] w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
           />
         </div>
         <div>
           <label class="block text-xs text-slate-300">Notas da Vaga / Teste Técnico</label>
           <textarea
             v-model="notes"
+            data-testid="input-job-notes"
             rows="2"
             placeholder="Observações sobre arquitetura ou etapas..."
             class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
@@ -153,9 +208,10 @@ function handleCreateJob() {
         </div>
         <button
           type="submit"
-          class="min-h-[44px] w-full rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
+          data-testid="save-job-btn"
+          class="min-h-[48px] w-full rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
         >
-          Salvar e Calcular Match
+          {{ editingJobId ? 'Atualizar Vaga' : 'Salvar e Calcular Match' }}
         </button>
       </form>
 
@@ -164,6 +220,7 @@ function handleCreateJob() {
         <article
           v-for="{ job, analysis } in store.jobsWithScores"
           :key="job.id"
+          :data-testid="`job-card-${job.id}`"
           class="cursor-pointer rounded-xl border p-4 transition"
           :class="
             store.selectedJob?.id === job.id
@@ -222,7 +279,7 @@ function handleCreateJob() {
               ID: {{ store.selectedJob.id }}
             </span>
           </div>
-          <h2 class="font-display mt-2 text-2xl font-bold text-slate-50">
+          <h2 data-testid="selected-job-title" class="font-display mt-2 text-2xl font-bold text-slate-50">
             {{ store.selectedJob.title }}
           </h2>
           <p class="text-sm text-slate-400">
@@ -230,8 +287,8 @@ function handleCreateJob() {
           </p>
         </div>
 
-        <div class="flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-950/90 px-5 py-3">
-          <div>
+        <div class="flex items-center gap-3">
+          <div class="rounded-xl border border-slate-800 bg-slate-950/90 px-5 py-3">
             <p class="font-mono-tech text-[11px] text-slate-400 uppercase">Aderência Total</p>
             <p
               data-testid="overall-match-score"
@@ -246,6 +303,24 @@ function handleCreateJob() {
             >
               {{ store.selectedJobAnalysis.overallScore }}%
             </p>
+          </div>
+          <div class="flex flex-col gap-2">
+            <button
+              type="button"
+              data-testid="edit-selected-job-btn"
+              class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-200 hover:border-amber-400"
+              @click="openEditForm(store.selectedJob)"
+            >
+              Editar Vaga
+            </button>
+            <button
+              type="button"
+              data-testid="delete-selected-job-btn"
+              class="min-h-[48px] rounded-lg border border-rose-500/40 bg-rose-500/15 px-3.5 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-500/25"
+              @click="store.deleteJob(store.selectedJob.id)"
+            >
+              Excluir Vaga
+            </button>
           </div>
         </div>
       </div>
@@ -357,9 +432,10 @@ function handleCreateJob() {
         <div class="flex items-center gap-3">
           <label class="font-mono-tech text-xs text-slate-400">Estágio do Processo:</label>
           <select
+            data-testid="select-job-status"
             :value="store.selectedJob.status"
             aria-label="Estágio da candidatura"
-            class="min-h-[44px] rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100"
+            class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100"
             @change="
               store.updateJobStatus(
                 store.selectedJob.id,

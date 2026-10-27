@@ -11,7 +11,7 @@ import type {
   VaultStateSnapshot,
   VaultStoragePort
 } from '@/domain/contracts'
-import { analyzeJobMatch } from '@/domain/jobMatchEngine'
+import { analyzeJobMatch, normalizeSkillName } from '@/domain/jobMatchEngine'
 import { parseVaultBackup } from '@/domain/vaultValidator'
 import { createDefaultVaultSnapshot } from '@/infrastructure/defaultSeed'
 import { LocalStorageVaultAdapter } from '@/infrastructure/storageAdapter'
@@ -117,24 +117,64 @@ export const useCareerVaultStore = defineStore('careerVault', () => {
     }
   }
 
-  function addSkill(name: string, category: SkillCategory = 'backend') {
+  function addSkill(name: string, category: SkillCategory = 'backend'): CandidateSkill {
     const trimmed = name.trim()
-    if (!trimmed) return
-    const exists = skills.value.some((s) => s.name.toLowerCase() === trimmed.toLowerCase())
-    if (exists) return
-    skills.value.push({
+    if (!trimmed) {
+      throw new Error('O nome da skill é obrigatório.')
+    }
+    const normalizedNew = normalizeSkillName(trimmed)
+    const exists = skills.value.some((s) => normalizeSkillName(s.name) === normalizedNew)
+    if (exists) {
+      throw new Error(`Constraint violada: a skill "${trimmed}" já existe no perfil.`)
+    }
+    const created: CandidateSkill = {
       id: `sk-${Date.now()}`,
       name: trimmed,
       category,
       proficiency: 4,
       active: true
-    })
+    }
+    skills.value.push(created)
+    persist()
+    return created
+  }
+
+  function updateSkill(skillId: string, patch: Partial<Pick<CandidateSkill, 'name' | 'category' | 'proficiency' | 'active'>>) {
+    const target = skills.value.find((s) => s.id === skillId)
+    if (!target) return
+    if (patch.name !== undefined) {
+      const trimmed = patch.name.trim()
+      if (!trimmed) throw new Error('O nome da skill não pode ser vazio.')
+      const duplicate = skills.value.some(
+        (s) => s.id !== skillId && normalizeSkillName(s.name) === normalizeSkillName(trimmed)
+      )
+      if (duplicate) throw new Error(`Constraint violada: a skill "${trimmed}" já existe.`)
+      target.name = trimmed
+    }
+    if (patch.category !== undefined) target.category = patch.category
+    if (patch.proficiency !== undefined) target.proficiency = patch.proficiency
+    if (patch.active !== undefined) target.active = patch.active
+    persist()
+  }
+
+  function deleteSkill(skillId: string) {
+    skills.value = skills.value.filter((s) => s.id !== skillId)
     persist()
   }
 
   function addJob(input: Omit<JobOpportunity, 'id' | 'createdAt'>): JobOpportunity {
+    const title = input.title.trim()
+    const company = input.company.trim()
+    if (!title || !company) {
+      throw new Error('Constraint violada: título da vaga e empresa são obrigatórios.')
+    }
+    if (input.requiredSkills.length === 0) {
+      throw new Error('Constraint violada: informe ao menos 1 skill obrigatória para a vaga.')
+    }
     const created: JobOpportunity = {
       ...input,
+      title,
+      company,
       id: `job-${Date.now()}`,
       createdAt: new Date().toISOString()
     }
@@ -144,12 +184,39 @@ export const useCareerVaultStore = defineStore('careerVault', () => {
     return created
   }
 
-  function updateJobStatus(jobId: string, status: ApplicationStatus) {
+  function updateJob(
+    jobId: string,
+    patch: Partial<Omit<JobOpportunity, 'id' | 'createdAt'>>
+  ): JobOpportunity {
     const job = jobs.value.find((j) => j.id === jobId)
-    if (job) {
-      job.status = status
-      persist()
+    if (!job) {
+      throw new Error('Vaga não encontrada.')
     }
+    if (patch.title !== undefined) {
+      if (!patch.title.trim()) throw new Error('Constraint violada: título não pode ser vazio.')
+      job.title = patch.title.trim()
+    }
+    if (patch.company !== undefined) {
+      if (!patch.company.trim()) throw new Error('Constraint violada: empresa não pode ser vazia.')
+      job.company = patch.company.trim()
+    }
+    if (patch.level !== undefined) job.level = patch.level
+    if (patch.workMode !== undefined) job.workMode = patch.workMode
+    if (patch.status !== undefined) job.status = patch.status
+    if (patch.requiredSkills !== undefined) {
+      if (patch.requiredSkills.length === 0) {
+        throw new Error('Constraint violada: a vaga deve ter ao menos 1 skill obrigatória.')
+      }
+      job.requiredSkills = patch.requiredSkills
+    }
+    if (patch.bonusSkills !== undefined) job.bonusSkills = patch.bonusSkills
+    if (patch.notes !== undefined) job.notes = patch.notes
+    persist()
+    return job
+  }
+
+  function updateJobStatus(jobId: string, status: ApplicationStatus) {
+    updateJob(jobId, { status })
   }
 
   function deleteJob(jobId: string) {
@@ -163,19 +230,49 @@ export const useCareerVaultStore = defineStore('careerVault', () => {
   function addSnippet(
     input: Omit<CodeSnippet, 'id' | 'updatedAt' | 'favorite'> & { favorite?: boolean }
   ): CodeSnippet {
+    const title = input.title.trim()
+    const code = input.code.trim()
+    if (!title || !code) {
+      throw new Error('Constraint violada: título e código do snippet são obrigatórios.')
+    }
     const created: CodeSnippet = {
       id: `snip-${Date.now()}`,
-      title: input.title.trim(),
+      title,
       language: input.language,
       tags: input.tags,
       summary: input.summary.trim(),
-      code: input.code,
+      code,
       favorite: input.favorite ?? false,
       updatedAt: new Date().toISOString()
     }
     snippets.value.unshift(created)
     persist()
     return created
+  }
+
+  function updateSnippet(
+    snippetId: string,
+    patch: Partial<Omit<CodeSnippet, 'id' | 'updatedAt'>>
+  ): CodeSnippet {
+    const item = snippets.value.find((s) => s.id === snippetId)
+    if (!item) {
+      throw new Error('Snippet não encontrado.')
+    }
+    if (patch.title !== undefined) {
+      if (!patch.title.trim()) throw new Error('Constraint violada: título do snippet é obrigatório.')
+      item.title = patch.title.trim()
+    }
+    if (patch.code !== undefined) {
+      if (!patch.code.trim()) throw new Error('Constraint violada: código do snippet é obrigatório.')
+      item.code = patch.code
+    }
+    if (patch.language !== undefined) item.language = patch.language
+    if (patch.tags !== undefined) item.tags = patch.tags
+    if (patch.summary !== undefined) item.summary = patch.summary.trim()
+    if (patch.favorite !== undefined) item.favorite = patch.favorite
+    item.updatedAt = new Date().toISOString()
+    persist()
+    return item
   }
 
   function toggleSnippetFavorite(snippetId: string) {
@@ -225,10 +322,14 @@ export const useCareerVaultStore = defineStore('careerVault', () => {
     resetToDefaultSeed,
     toggleSkill,
     addSkill,
+    updateSkill,
+    deleteSkill,
     addJob,
+    updateJob,
     updateJobStatus,
     deleteJob,
     addSnippet,
+    updateSnippet,
     toggleSnippetFavorite,
     deleteSnippet,
     exportBackupJson,

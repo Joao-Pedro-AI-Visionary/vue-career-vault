@@ -6,8 +6,10 @@ import type { SkillCategory } from '@/domain/contracts'
 const store = useCareerVaultStore()
 const activeCategory = ref<SkillCategory | 'all'>('all')
 const showAddSkill = ref(false)
+const manageMode = ref(false)
 const newSkillName = ref('')
 const newSkillCategory = ref<SkillCategory>('backend')
+const errorMsg = ref('')
 
 // Lei de Miller (05): Chunking de categorias em até 6 grupos claros
 const categories: Array<{ id: SkillCategory | 'all'; label: string }> = [
@@ -30,10 +32,14 @@ const visibleSkills = computed(() => {
 const activeCount = computed(() => store.skills.filter((s) => s.active).length)
 
 function handleAddSkill() {
-  if (!newSkillName.value.trim()) return
-  store.addSkill(newSkillName.value, newSkillCategory.value)
-  newSkillName.value = ''
-  showAddSkill.value = false
+  errorMsg.value = ''
+  try {
+    store.addSkill(newSkillName.value, newSkillCategory.value)
+    newSkillName.value = ''
+    showAddSkill.value = false
+  } catch (err) {
+    errorMsg.value = err instanceof Error ? err.message : 'Erro ao criar skill.'
+  }
 }
 </script>
 
@@ -55,25 +61,48 @@ function handleAddSkill() {
         </h2>
       </div>
 
-      <!-- Lei de Hick (02): Progressive Disclosure para adição de nova skill -->
-      <div class="flex items-center gap-2">
+      <!-- Lei de Hick (02): Progressive Disclosure para adição e gestão de skills -->
+      <div class="flex flex-wrap items-center gap-2">
         <button
           type="button"
+          data-testid="toggle-skill-manage"
+          class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-500"
+          @click="manageMode = !manageMode"
+        >
+          {{ manageMode ? 'Concluir Edição' : 'Gerenciar Skills' }}
+        </button>
+        <button
+          type="button"
+          data-testid="open-add-skill-btn"
           class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400"
-          @click="showAddSkill = !showAddSkill"
+          @click="
+            showAddSkill = !showAddSkill;
+            errorMsg = '';
+          "
         >
           {{ showAddSkill ? 'Fechar Campo' : '+ Adicionar Nova Skill' }}
         </button>
       </div>
     </div>
 
+    <p
+      v-if="errorMsg"
+      data-testid="skill-error-alert"
+      role="alert"
+      class="mt-3 rounded-lg border border-rose-500/40 bg-rose-500/15 px-3.5 py-2 text-xs font-medium text-rose-200"
+    >
+      {{ errorMsg }}
+    </p>
+
     <form
       v-if="showAddSkill"
+      data-testid="add-skill-form"
       class="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/80 p-3"
       @submit.prevent="handleAddSkill"
     >
       <input
         v-model="newSkillName"
+        data-testid="input-skill-name"
         type="text"
         placeholder="Nome da skill (ex: GraphQL)..."
         aria-label="Nome da nova skill"
@@ -81,6 +110,7 @@ function handleAddSkill() {
       />
       <select
         v-model="newSkillCategory"
+        data-testid="select-skill-category"
         aria-label="Categoria da skill"
         class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-sm text-slate-200 focus:border-amber-400 focus:outline-none"
       >
@@ -93,6 +123,7 @@ function handleAddSkill() {
       </select>
       <button
         type="submit"
+        data-testid="submit-skill-btn"
         class="min-h-[48px] rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
       >
         Salvar Skill
@@ -105,6 +136,7 @@ function handleAddSkill() {
         v-for="cat in categories"
         :key="cat.id"
         type="button"
+        :data-testid="`skill-cat-${cat.id}`"
         class="min-h-[40px] rounded-md px-3 py-1 text-xs font-medium transition"
         :class="
           activeCategory === cat.id
@@ -119,29 +151,44 @@ function handleAddSkill() {
 
     <!-- Lei de Fitts (01): Alvos de toque de no mínimo 48px de altura -->
     <div class="mt-4 flex flex-wrap gap-2">
-      <button
+      <div
         v-for="skill in visibleSkills"
         :key="skill.id"
-        type="button"
-        :data-testid="`skill-toggle-${skill.name}`"
-        :aria-pressed="skill.active"
-        class="group inline-flex min-h-[48px] items-center gap-2 rounded-lg border px-4 py-2 text-xs font-medium transition duration-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-        :class="
-          skill.active
-            ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
-            : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-        "
-        @click="store.toggleSkill(skill.id)"
+        class="inline-flex items-center gap-1"
       >
-        <span
-          class="h-2 w-2 rounded-full transition"
-          :class="skill.active ? 'bg-emerald-400' : 'bg-slate-600'"
-        ></span>
-        <span class="font-medium">{{ skill.name }}</span>
-        <span class="font-mono-tech text-[10px] opacity-70">
-          {{ skill.active ? 'ON' : 'OFF' }}
-        </span>
-      </button>
+        <button
+          type="button"
+          :data-testid="`skill-toggle-${skill.name}`"
+          :aria-pressed="skill.active"
+          class="group inline-flex min-h-[48px] items-center gap-2 rounded-lg border px-4 py-2 text-xs font-medium transition duration-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+          :class="
+            skill.active
+              ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
+              : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+          "
+          @click="store.toggleSkill(skill.id)"
+        >
+          <span
+            class="h-2 w-2 rounded-full transition"
+            :class="skill.active ? 'bg-emerald-400' : 'bg-slate-600'"
+          ></span>
+          <span class="font-medium">{{ skill.name }}</span>
+          <span class="font-mono-tech text-[10px] opacity-70">
+            {{ skill.active ? 'ON' : 'OFF' }}
+          </span>
+        </button>
+
+        <button
+          v-if="manageMode"
+          type="button"
+          :data-testid="`delete-skill-${skill.name}`"
+          aria-label="Remover skill"
+          class="min-h-[48px] rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 text-xs font-bold text-rose-300 hover:bg-rose-500/30"
+          @click="store.deleteSkill(skill.id)"
+        >
+          ×
+        </button>
+      </div>
     </div>
   </section>
 </template>
