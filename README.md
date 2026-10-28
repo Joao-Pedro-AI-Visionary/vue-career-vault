@@ -1,5 +1,8 @@
 # CareerVault — Precision Job Skill Matcher & Technical Snippet Ledger (Vue 3.5 + TypeScript)
 
+> 🚀 **Deploy em Produção (Vercel):** [https://vue-career-vault.vercel.app](https://vue-career-vault.vercel.app)
+> 🎨 **Design System:** Inspirado em referências do Dribbble (SaaS Minimalista / Linear & Vercel Style) + 19 Leis de UX aplicadas e alvos de toque $\ge 48\text{px}$.
+
 Aplicação web **Local-First** construída em **Vue 3 (`<script setup>`, Composition API)**, **TypeScript**, **Pinia** e **Tailwind CSS v4** para engenheiros de software avaliarem aderência técnica a vagas (ex.: Fullstack PHP/Laravel + Vue.js), identificarem lacunas de estudo priorizadas e organizarem um cofre pesquisável de snippets de código.
 
 ---
