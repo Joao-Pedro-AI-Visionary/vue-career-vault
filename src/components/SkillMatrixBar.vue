@@ -46,18 +46,18 @@ function handleAddSkill() {
 <template>
   <section
     aria-label="Matriz de Competências do Candidato"
-    class="rounded-xl border border-slate-800/90 bg-[#111827]/90 p-5 shadow-lg"
+    class="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs"
   >
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <div class="flex items-center gap-2">
-          <span class="inline-block h-2 w-2 rounded-full bg-amber-400"></span>
-          <p class="font-mono-tech text-xs tracking-widest text-amber-400 uppercase">
+          <span class="inline-block h-2.5 w-2.5 rounded-full bg-indigo-600"></span>
+          <p class="font-mono-tech text-xs font-semibold tracking-wider text-indigo-600 uppercase">
             Perfil Técnico Ativo ({{ activeCount }}/{{ store.skills.length }} skills ativas)
           </p>
         </div>
-        <h2 class="font-display mt-1 text-lg font-semibold text-slate-100">
-          Ative ou desative suas skills para simular a aderência em menos de 100ms
+        <h2 class="font-display mt-1 text-lg font-bold text-slate-900">
+          Ative ou desative suas skills para simular a aderência em tempo real
         </h2>
       </div>
 
@@ -66,7 +66,7 @@ function handleAddSkill() {
         <button
           type="button"
           data-testid="toggle-skill-manage"
-          class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-500"
+          class="min-h-[48px] rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 hover:border-slate-300"
           @click="manageMode = !manageMode"
         >
           {{ manageMode ? 'Concluir Edição' : 'Gerenciar Skills' }}
@@ -74,7 +74,7 @@ function handleAddSkill() {
         <button
           type="button"
           data-testid="open-add-skill-btn"
-          class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400"
+          class="min-h-[48px] rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           @click="
             showAddSkill = !showAddSkill;
             errorMsg = '';
@@ -89,7 +89,7 @@ function handleAddSkill() {
       v-if="errorMsg"
       data-testid="skill-error-alert"
       role="alert"
-      class="mt-3 rounded-lg border border-rose-500/40 bg-rose-500/15 px-3.5 py-2 text-xs font-medium text-rose-200"
+      class="mt-3.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700"
     >
       {{ errorMsg }}
     </p>
@@ -97,7 +97,7 @@ function handleAddSkill() {
     <form
       v-if="showAddSkill"
       data-testid="add-skill-form"
-      class="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/80 p-3"
+      class="mt-4 flex flex-wrap items-center gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3.5"
       @submit.prevent="handleAddSkill"
     >
       <input
@@ -106,13 +106,13 @@ function handleAddSkill() {
         type="text"
         placeholder="Nome da skill (ex: GraphQL)..."
         aria-label="Nome da nova skill"
-        class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-sm text-slate-100 placeholder-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+        class="min-h-[48px] rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-xs"
       />
       <select
         v-model="newSkillCategory"
         data-testid="select-skill-category"
         aria-label="Categoria da skill"
-        class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-sm text-slate-200 focus:border-amber-400 focus:outline-none"
+        class="min-h-[48px] rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-700 focus:border-indigo-600 focus:outline-none shadow-xs"
       >
         <option value="frontend">Frontend</option>
         <option value="backend">Backend</option>
@@ -124,24 +124,24 @@ function handleAddSkill() {
       <button
         type="submit"
         data-testid="submit-skill-btn"
-        class="min-h-[48px] rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+        class="min-h-[48px] rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"
       >
         Salvar Skill
       </button>
     </form>
 
     <!-- Lei de Miller (05): Chunking por categoria -->
-    <div class="mt-4 flex flex-wrap gap-1.5 border-b border-slate-800/80 pb-3">
+    <div class="mt-4 flex flex-wrap gap-1.5 border-b border-slate-100 pb-3">
       <button
         v-for="cat in categories"
         :key="cat.id"
         type="button"
         :data-testid="`skill-cat-${cat.id}`"
-        class="min-h-[40px] rounded-md px-3 py-1 text-xs font-medium transition"
+        class="min-h-[38px] rounded-lg px-3 py-1 text-xs font-semibold transition"
         :class="
           activeCategory === cat.id
-            ? 'bg-slate-800 text-amber-300'
-            : 'text-slate-400 hover:text-slate-200'
+            ? 'bg-slate-900 text-white shadow-xs'
+            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
         "
         @click="activeCategory = cat.id"
       >
@@ -154,26 +154,26 @@ function handleAddSkill() {
       <div
         v-for="skill in visibleSkills"
         :key="skill.id"
-        class="inline-flex items-center gap-1"
+        class="inline-flex items-center gap-1.5"
       >
         <button
           type="button"
           :data-testid="`skill-toggle-${skill.name}`"
           :aria-pressed="skill.active"
-          class="group inline-flex min-h-[48px] items-center gap-2 rounded-lg border px-4 py-2 text-xs font-medium transition duration-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+          class="group inline-flex min-h-[48px] items-center gap-2 rounded-xl border px-4 py-2 text-xs font-semibold transition duration-150 shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
           :class="
             skill.active
-              ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
-              : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100/70'
+              : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-slate-100'
           "
           @click="store.toggleSkill(skill.id)"
         >
           <span
             class="h-2 w-2 rounded-full transition"
-            :class="skill.active ? 'bg-emerald-400' : 'bg-slate-600'"
+            :class="skill.active ? 'bg-emerald-500 ring-2 ring-emerald-200' : 'bg-slate-300'"
           ></span>
-          <span class="font-medium">{{ skill.name }}</span>
-          <span class="font-mono-tech text-[10px] opacity-70">
+          <span>{{ skill.name }}</span>
+          <span class="font-mono-tech text-[10px] font-bold opacity-60">
             {{ skill.active ? 'ON' : 'OFF' }}
           </span>
         </button>
@@ -183,7 +183,7 @@ function handleAddSkill() {
           type="button"
           :data-testid="`delete-skill-${skill.name}`"
           aria-label="Remover skill"
-          class="min-h-[48px] rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 text-xs font-bold text-rose-300 hover:bg-rose-500/30"
+          class="min-h-[48px] rounded-xl border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-600 hover:bg-rose-100 transition"
           @click="store.deleteSkill(skill.id)"
         >
           ×

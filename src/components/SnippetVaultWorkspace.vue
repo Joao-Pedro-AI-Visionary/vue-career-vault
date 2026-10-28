@@ -98,18 +98,18 @@ async function copyCode(id: string, code: string) {
 <template>
   <section class="space-y-6">
     <!-- Filter and Search Bar -->
-    <div class="flex flex-col gap-4 rounded-xl border border-slate-800 bg-[#111827] p-5 lg:flex-row lg:items-center lg:justify-between">
+    <div class="flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs lg:flex-row lg:items-center lg:justify-between">
       <div class="flex flex-wrap items-center gap-2">
         <button
           v-for="lang in languages"
           :key="lang.id"
           type="button"
           :data-testid="`lang-filter-${lang.id}`"
-          class="min-h-[48px] rounded-lg px-3.5 py-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-400"
+          class="min-h-[44px] rounded-xl px-3.5 py-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-400"
           :class="
             store.snippetLanguageFilter === lang.id
-              ? 'bg-amber-500 text-slate-950'
-              : 'border border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
           "
           @click="store.snippetLanguageFilter = lang.id"
         >
@@ -119,11 +119,11 @@ async function copyCode(id: string, code: string) {
         <button
           type="button"
           data-testid="toggle-only-favorites"
-          class="min-h-[48px] rounded-lg border px-3.5 py-2 text-xs font-semibold transition"
+          class="min-h-[44px] rounded-xl border px-3.5 py-2 text-xs font-semibold transition"
           :class="
             store.showOnlyFavorites
-              ? 'border-amber-400 bg-amber-500/20 text-amber-200'
-              : 'border-slate-800 bg-slate-900 text-slate-300'
+              ? 'border-amber-300 bg-amber-50 text-amber-800'
+              : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
           "
           @click="store.showOnlyFavorites = !store.showOnlyFavorites"
         >
@@ -131,165 +131,193 @@ async function copyCode(id: string, code: string) {
         </button>
       </div>
 
-      <div class="flex flex-wrap items-center gap-3">
+      <div class="flex flex-wrap items-center gap-2.5">
         <input
           v-model="store.snippetSearchQuery"
           data-testid="snippet-search-input"
           type="search"
           placeholder="Buscar por título, tag ou código..."
           aria-label="Buscar snippets"
-          class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2 text-sm text-slate-100 placeholder-slate-400 focus:border-amber-400 focus:outline-none"
+          class="min-h-[44px] rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
         />
+
         <button
           type="button"
           data-testid="open-new-snippet-btn"
-          class="min-h-[48px] rounded-lg border border-amber-500/40 bg-amber-500/15 px-4 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/25"
+          class="min-h-[44px] rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition"
           @click="openNewSnippetForm"
         >
-          {{ showSnippetForm && !editingSnippetId ? 'Cancelar' : '+ Novo Snippet' }}
+          {{ showSnippetForm && !editingSnippetId ? 'Fechar Formulário' : '+ Novo Snippet' }}
         </button>
       </div>
     </div>
 
-    <!-- Add / Edit Snippet Form -->
+    <!-- Create / Edit Snippet Form -->
     <form
       v-if="showSnippetForm"
-      data-testid="snippet-form"
-      class="space-y-3 rounded-xl border border-amber-500/40 bg-slate-900 p-5"
-      novalidate
+      data-testid="submit-new-snippet"
+      class="space-y-3.5 rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm"
       @submit.prevent="handleSaveSnippet"
     >
-      <h3 class="font-display text-base font-semibold text-amber-300">
-        {{ editingSnippetId ? 'Editar Snippet Técnico' : 'Salvar Padrão Técnico no Cofre' }}
-      </h3>
+      <p class="font-mono-tech text-xs font-bold text-indigo-700 uppercase">
+        {{ editingSnippetId ? 'Editar Snippet' : 'Cadastrar Novo Snippet para Testes Técnicos' }}
+      </p>
+
       <p
         v-if="snippetError"
         data-testid="snippet-error-alert"
         role="alert"
-        class="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-xs font-medium text-rose-200"
+        class="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-medium text-rose-700"
       >
         {{ snippetError }}
       </p>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <input
-          v-model="newTitle"
-          data-testid="input-snippet-title"
-          type="text"
-          placeholder="Título do snippet"
-          class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 sm:col-span-2"
-        />
-        <select
-          v-model="newLanguage"
-          data-testid="select-snippet-language"
-          class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
-        >
-          <option value="vue">Vue 3</option>
-          <option value="laravel">Laravel</option>
-          <option value="php">PHP 8.3</option>
-          <option value="ts">TypeScript</option>
-          <option value="sql">SQL</option>
-          <option value="bash">Bash</option>
-        </select>
-      </div>
+
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <input
-          v-model="newSummary"
-          data-testid="input-snippet-summary"
-          type="text"
-          placeholder="Explicação curta de quando usar este padrão"
-          class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
-        />
+        <div>
+          <label class="block text-xs font-semibold text-slate-700">Título do Snippet *</label>
+          <input
+            v-model="newTitle"
+            data-testid="input-snippet-title"
+            type="text"
+            placeholder="Ex: Laravel Custom Cast para JSON Monad"
+            class="mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
+          />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700">Linguagem / Stack</label>
+          <select
+            v-model="newLanguage"
+            data-testid="select-snippet-language"
+            class="mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 focus:bg-white focus:border-indigo-600 shadow-2xs"
+          >
+            <option value="vue">Vue 3</option>
+            <option value="laravel">Laravel</option>
+            <option value="php">PHP 8.3</option>
+            <option value="ts">TypeScript</option>
+            <option value="sql">SQL</option>
+            <option value="bash">Bash</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700">Tags (separadas por vírgula)</label>
         <input
           v-model="newTags"
           data-testid="input-snippet-tags"
           type="text"
-          placeholder="Tags separadas por vírgula (ex: pinia, tdd)"
-          class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+          placeholder="eloquent, cache, redis, performance"
+          class="mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
         />
       </div>
-      <textarea
-        v-model="newCode"
-        data-testid="input-snippet-code"
-        rows="5"
-        placeholder="Cole o bloco de código aqui..."
-        class="font-mono-tech w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100"
-      ></textarea>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700">Resumo Técnico</label>
+        <input
+          v-model="newSummary"
+          data-testid="input-snippet-summary"
+          type="text"
+          placeholder="Explicação do trade-off arquitetural..."
+          class="mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700">Código-Fonte *</label>
+        <textarea
+          v-model="newCode"
+          data-testid="input-snippet-code"
+          rows="6"
+          placeholder="Cole aqui o código de produção..."
+          class="font-mono-tech mt-1 w-full rounded-xl border border-slate-800 bg-[#0F172A] p-3 text-xs text-emerald-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        ></textarea>
+      </div>
+
       <button
         type="submit"
         data-testid="save-snippet-btn"
-        class="min-h-[48px] rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-400"
+        class="min-h-[48px] rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-indigo-700 shadow-xs"
       >
         {{ editingSnippetId ? 'Atualizar Snippet' : 'Salvar no Cofre' }}
       </button>
     </form>
 
     <!-- Snippets Grid -->
-    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <article
         v-for="snippet in store.filteredSnippets"
         :key="snippet.id"
         :data-testid="`snippet-card-${snippet.id}`"
-        class="flex flex-col justify-between rounded-xl border border-slate-800 bg-[#111827] p-5 shadow-md"
+        class="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs hover:border-slate-300 hover:shadow-md transition"
       >
         <div>
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="font-mono-tech rounded bg-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-300 uppercase">
-              {{ snippet.language }}
-            </span>
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                :data-testid="`fav-snippet-${snippet.id}`"
-                class="min-h-[48px] rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs"
-                :class="snippet.favorite ? 'text-amber-400' : 'text-slate-500'"
-                @click="store.toggleSnippetFavorite(snippet.id)"
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="rounded-lg bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 font-mono-tech text-[11px] font-bold text-indigo-700">
+                {{ snippet.language.toUpperCase() }}
+              </span>
+              <h4
+                :data-testid="`snippet-title-${snippet.id}`"
+                class="font-display text-sm font-bold text-slate-900"
               >
-                {{ snippet.favorite ? '★ Favorito' : '☆ Favoritar' }}
-              </button>
-              <button
-                type="button"
-                :data-testid="`edit-snippet-${snippet.id}`"
-                class="min-h-[48px] rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 hover:border-amber-400"
-                @click="openEditSnippet(snippet)"
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                :data-testid="`delete-snippet-${snippet.id}`"
-                class="min-h-[48px] rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-300 hover:bg-rose-500/25"
-                @click="store.deleteSnippet(snippet.id)"
-              >
-                Excluir
-              </button>
-              <button
-                type="button"
-                class="min-h-[48px] rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-700"
-                @click="copyCode(snippet.id, snippet.code)"
-              >
-                {{ copiedId === snippet.id ? 'Copiado!' : 'Copiar' }}
-              </button>
+                {{ snippet.title }}
+              </h4>
             </div>
+
+            <button
+              type="button"
+              class="text-xs transition"
+              :class="snippet.favorite ? 'text-amber-500 font-bold' : 'text-slate-300'"
+              @click="store.toggleSnippetFavorite(snippet.id)"
+            >
+              ★
+            </button>
           </div>
 
-          <h4 class="font-display mt-2 text-lg font-semibold text-slate-100">
-            {{ snippet.title }}
-          </h4>
-          <p class="mt-1 text-xs text-slate-400">
-            {{ snippet.summary }}
-          </p>
+          <p class="mt-2 text-xs text-slate-600">{{ snippet.summary }}</p>
 
-          <pre class="font-mono-tech mt-3 overflow-x-auto rounded-lg border border-slate-800/90 bg-slate-950 p-3.5 text-xs leading-relaxed text-slate-200"><code>{{ snippet.code }}</code></pre>
+          <div class="mt-3 flex flex-wrap gap-1.5">
+            <span
+              v-for="tag in snippet.tags"
+              :key="tag"
+              class="rounded-md bg-slate-100 px-2 py-0.5 font-mono-tech text-[10px] font-medium text-slate-600"
+            >
+              #{{ tag }}
+            </span>
+          </div>
+
+          <!-- Code Display: Sleek Obsidian Editor against White Card -->
+          <pre class="font-mono-tech mt-3.5 max-h-56 overflow-x-auto rounded-xl border border-slate-900 bg-[#0F172A] p-3 text-[11px] text-slate-200"><code>{{ snippet.code }}</code></pre>
         </div>
 
-        <div class="mt-4 flex flex-wrap gap-1.5 pt-2">
-          <span
-            v-for="tag in snippet.tags"
-            :key="tag"
-            class="font-mono-tech rounded bg-slate-900 px-2 py-0.5 text-[11px] text-slate-400"
+        <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+          <button
+            type="button"
+            :data-testid="`copy-snippet-btn-${snippet.id}`"
+            class="min-h-[40px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition shadow-2xs"
+            @click="copyCode(snippet.id, snippet.code)"
           >
-            #{{ tag }}
-          </span>
+            {{ copiedId === snippet.id ? '✓ Copiado!' : 'Copiar Código' }}
+          </button>
+
+          <div class="flex gap-2">
+            <button
+              type="button"
+              :data-testid="`edit-snippet-btn-${snippet.id}`"
+              class="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+              @click="openEditSnippet(snippet)"
+            >
+              Editar
+            </button>
+            <button
+              type="button"
+              :data-testid="`delete-snippet-btn-${snippet.id}`"
+              class="text-xs font-semibold text-rose-600 hover:text-rose-800"
+              @click="store.deleteSnippet(snippet.id)"
+            >
+              Excluir
+            </button>
+          </div>
         </div>
       </article>
     </div>

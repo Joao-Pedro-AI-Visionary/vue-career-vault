@@ -1,15 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --bg-canvas: #0B0F17;
-  --bg-surface: #111827;
-  --bg-elevated: #1E293B;
-  --border-subtle: #1F2937;
-  --text-primary: #F8FAFC;
-  --text-muted: #94A3B8;
-  --accent-amber: #F59E0B;
-  --accent-emerald: #10B981;
-  --accent-rose: #F43F5E;
+  --bg-canvas: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F1F5F9;
+  --border-subtle: #E2E8F0;
+  --text-primary: #0F172A;
+  --text-muted: #64748B;
+  --accent-primary: #4F46E5;
+  --accent-amber: #D97706;
+  --accent-emerald: #059669;
+  --accent-rose: #E11D48;
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;

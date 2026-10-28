@@ -40,45 +40,45 @@ function handleImportBackup() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#0B0F17] text-[#F8FAFC]">
-    <!-- Top Telemetry Header -->
-    <header class="border-b border-slate-800/80 bg-[#111827]/95 backdrop-blur">
-      <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+  <div class="min-h-screen bg-[#F8FAFC] text-slate-900 antialiased selection:bg-indigo-100 selection:text-indigo-900">
+    <!-- Top Telemetry Header (Dribbble Neo-SaaS Clean Studio) -->
+    <header class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md shadow-xs">
+      <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div class="flex items-center gap-3">
-          <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-amber-500/40 bg-amber-500/10 font-mono-tech text-sm font-bold text-amber-400">
+          <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 font-mono-tech text-sm font-bold text-white shadow-xs">
             CV
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="font-mono-tech text-xs font-bold tracking-wider text-amber-400">
+              <span class="font-mono-tech text-[11px] font-bold tracking-wider text-indigo-600 uppercase">
                 CAREER_VAULT // VUE 3.5 + PINIA
               </span>
-              <span class="rounded bg-emerald-500/20 px-2 py-0.5 font-mono-tech text-[10px] text-emerald-300">
+              <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono-tech text-[10px] font-semibold text-emerald-700">
                 LOCAL-FIRST
               </span>
             </div>
-            <h1 class="font-display text-lg font-bold text-slate-100">
+            <h1 class="font-display text-lg font-bold text-slate-900">
               Precision Job Skill Matcher & Technical Snippet Vault
             </h1>
           </div>
         </div>
 
         <!-- Navigation & Global Telemetry -->
-        <div class="flex flex-wrap items-center gap-3">
-          <div class="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs">
-            <span class="text-slate-400">Média de Match: </span>
-            <span class="font-mono-tech font-bold text-emerald-400">{{ store.averageMatchScore }}%</span>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <div class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2 text-xs">
+            <span class="text-slate-500 font-medium">Média de Match:</span>
+            <span class="font-mono-tech font-bold text-emerald-600">{{ store.averageMatchScore }}%</span>
           </div>
 
-          <nav class="flex rounded-lg border border-slate-800 bg-slate-950 p-1" aria-label="Navegação Principal">
+          <nav class="flex rounded-xl border border-slate-200 bg-slate-100/80 p-1" aria-label="Navegação Principal">
             <button
               type="button"
               data-testid="nav-tab-jobs"
-              class="min-h-[48px] rounded-md px-4 py-1.5 text-xs font-semibold transition"
+              class="min-h-[44px] rounded-lg px-4 py-1.5 text-xs font-semibold transition"
               :class="
                 activeTab === 'jobs'
-                  ? 'bg-amber-500 text-slate-950'
-                  : 'text-slate-300 hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               "
               @click="activeTab = 'jobs'"
             >
@@ -87,11 +87,11 @@ function handleImportBackup() {
             <button
               type="button"
               data-testid="nav-tab-snippets"
-              class="min-h-[48px] rounded-md px-4 py-1.5 text-xs font-semibold transition"
+              class="min-h-[44px] rounded-lg px-4 py-1.5 text-xs font-semibold transition"
               :class="
                 activeTab === 'snippets'
-                  ? 'bg-amber-500 text-slate-950'
-                  : 'text-slate-300 hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               "
               @click="activeTab = 'snippets'"
             >
@@ -102,7 +102,7 @@ function handleImportBackup() {
           <button
             type="button"
             data-testid="open-backup-btn"
-            class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-200 hover:border-amber-400"
+            class="min-h-[44px] rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:border-slate-300 hover:bg-slate-50 transition"
             @click="openBackupPanel"
           >
             Backup JSON
@@ -111,7 +111,7 @@ function handleImportBackup() {
           <button
             type="button"
             data-testid="reset-demo-btn"
-            class="min-h-[48px] rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs text-slate-300 hover:border-slate-600"
+            class="min-h-[44px] rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition"
             @click="store.resetToDefaultSeed()"
           >
             Restaurar Demo
@@ -126,15 +126,15 @@ function handleImportBackup() {
       <section
         v-if="showBackupDrawer"
         data-testid="backup-drawer"
-        class="space-y-3 rounded-xl border border-amber-500/40 bg-[#111827] p-5"
+        class="space-y-3 rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm"
       >
         <div class="flex items-center justify-between">
-          <h2 class="font-display text-base font-semibold text-amber-300">
+          <h2 class="font-display text-base font-semibold text-indigo-900">
             Exportar / Importar Snapshot JSON (Validação de Schema v1)
           </h2>
           <button
             type="button"
-            class="text-xs text-slate-400 hover:text-slate-200"
+            class="text-xs font-medium text-slate-400 hover:text-slate-700"
             @click="showBackupDrawer = false"
           >
             Fechar
@@ -144,14 +144,14 @@ function handleImportBackup() {
           v-if="backupError"
           data-testid="backup-error-alert"
           role="alert"
-          class="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-xs font-medium text-rose-200"
+          class="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700"
         >
           {{ backupError }}
         </p>
         <p
           v-if="backupSuccess"
           data-testid="backup-success-alert"
-          class="rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-200"
+          class="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-medium text-emerald-700"
         >
           {{ backupSuccess }}
         </p>
@@ -159,13 +159,13 @@ function handleImportBackup() {
           v-model="backupJsonText"
           data-testid="backup-json-textarea"
           rows="5"
-          class="font-mono-tech w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-xs text-slate-200"
+          class="font-mono-tech w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
         ></textarea>
         <div class="flex gap-3">
           <button
             type="button"
             data-testid="import-backup-submit"
-            class="min-h-[48px] rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-amber-400"
+            class="min-h-[48px] rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition"
             @click="handleImportBackup"
           >
             Validar e Importar JSON
